@@ -10,7 +10,7 @@ import java.util.Objects;
  * at a particular time. These objects are returned in API
  * calls that may request a series of points for a chart.
  */
-public class Measurement {
+public class Measurement implements Comparable<Measurement>{
     public Long siteId;
     @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     public ZonedDateTime dateTime;
@@ -90,5 +90,15 @@ public class Measurement {
                 ", value=" + value +
                 ", metricUnit=" + metricUnit +
                 '}';
+    }
+
+    @Override
+    public int compareTo(Measurement o) {
+        if(dateTime.isAfter(o.dateTime)){
+            return 1;
+        }else if(dateTime.isBefore(o.dateTime)){
+            return -1;
+        }
+        return 0;
     }
 }

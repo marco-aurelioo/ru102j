@@ -5,6 +5,7 @@ import com.redislabs.university.RU102J.api.SiteStats;
 import com.redislabs.university.RU102J.script.CompareAndUpdateScript;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Transaction;
 
 import java.time.ZoneOffset;
@@ -46,8 +47,8 @@ public class SiteStatsDaoRedisImpl implements SiteStatsDao {
             Long siteId = reading.getSiteId();
             ZonedDateTime day = reading.getDateTime();
             String key = RedisSchema.getSiteStatsKey(siteId, day);
-
-            updateBasic(jedis, key, reading);
+            // updateBasic(jedis, key, reading);
+            updateOptimized(jedis, key, reading);
         }
     }
 
@@ -81,6 +82,29 @@ public class SiteStatsDaoRedisImpl implements SiteStatsDao {
     // Challenge #3
     private void updateOptimized(Jedis jedis, String key, MeterReading reading) {
         // START Challenge #3
+        String reportingTime = ZonedDateTime.now(ZoneOffset.UTC).toString();
+
+        String maxWh = jedis.hget(key, SiteStats.maxWhField);
+        String minWh = jedis.hget(key, SiteStats.minWhField);
+        String maxCapacity = jedis.hget(key, SiteStats.maxCapacityField);
+
+        Pipeline pipeline = jedis.pipelined();
+        pipeline.hset(key, SiteStats.reportingTimeField, reportingTime);
+        pipeline.hincrBy(key, SiteStats.countField, 1);
+        pipeline.expire(key, weekSeconds);
+        if (maxWh == null || reading.getWhGenerated() > Double.valueOf(maxWh)) {
+            pipeline.hset(key, SiteStats.maxWhField,
+                    String.valueOf(reading.getWhGenerated()));
+        }
+        if (minWh == null || reading.getWhGenerated() < Double.valueOf(minWh)) {
+            pipeline.hset(key, SiteStats.minWhField,
+                    String.valueOf(reading.getWhGenerated()));
+        }
+        if (maxCapacity == null || getCurrentCapacity(reading) > Double.valueOf(maxCapacity)) {
+            pipeline.hset(key, SiteStats.maxCapacityField,
+                    String.valueOf(getCurrentCapacity(reading)));
+        }
+        pipeline.sync();
         // END Challenge #3
     }
 
