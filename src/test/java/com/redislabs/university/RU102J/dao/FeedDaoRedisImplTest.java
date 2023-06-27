@@ -53,8 +53,7 @@ public class FeedDaoRedisImplTest {
     }
 
     // Challenge #6
-    @Ignore
-    @Test
+      @Test
     public void testBasicInsertReturnsRecent() {
         FeedDao dao = new FeedDaoRedisImpl(jedisPool);
         MeterReading reading0 = generateMeterReading(1L, ZonedDateTime.now());

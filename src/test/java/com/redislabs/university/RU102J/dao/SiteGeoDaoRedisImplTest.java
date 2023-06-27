@@ -125,7 +125,6 @@ public class SiteGeoDaoRedisImplTest {
     }
 
     // Challenge #5
-    @Ignore
     @Test
     public void findByGeoWithExcessCapacity() {
         SiteGeoDao siteDao = new SiteGeoDaoRedisImpl(jedisPool);
@@ -133,6 +132,7 @@ public class SiteGeoDaoRedisImplTest {
         Site vallejo = new Site(1, 4.5, 3, "637 Britannia Drive",
                 "Vallejo", "CA", "94591" );
         Coordinate vallejoCoord = new Coordinate("-122.256637", "38.104086");
+
         vallejo.setCoordinate(vallejoCoord);
         siteDao.insert(vallejo);
 
