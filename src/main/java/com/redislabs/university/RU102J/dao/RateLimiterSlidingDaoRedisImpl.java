@@ -1,6 +1,7 @@
 package com.redislabs.university.RU102J.dao;
 
-import redis.clients.jedis.JedisPool;
+import com.redislabs.university.RU102J.core.KeyHelper;
+import redis.clients.jedis.*;
 
 public class RateLimiterSlidingDaoRedisImpl implements RateLimiter {
 
@@ -19,6 +20,22 @@ public class RateLimiterSlidingDaoRedisImpl implements RateLimiter {
     @Override
     public void hit(String name) throws RateLimitExceededException {
         // START CHALLENGE #7
+        String key = KeyHelper.getKey("limiter:"+windowSizeMS+":"+name+":"+maxHits);
+        try(Jedis jedis = jedisPool.getResource()){
+            long currentWindowsStart = System.currentTimeMillis() - windowSizeMS;
+
+            Transaction transaction = jedis.multi();
+            transaction.zadd(key, System.currentTimeMillis(),  System.currentTimeMillis()+"-"+ Math.random());
+            transaction.zremrangeByScore(key, 0, currentWindowsStart);
+            Response<Long> zcard = transaction.zcard(key);
+            transaction.exec();
+
+            if(zcard.get() > maxHits) {
+                throw new RateLimitExceededException();
+            }
+        }
         // END CHALLENGE #7
     }
+
+
 }
